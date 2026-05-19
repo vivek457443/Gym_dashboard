@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block heading %}Attendance{% endblock %}
+{% block content %}
+<div class="grid md:grid-cols-3 gap-4">
+  <!-- Check-in panel -->
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow">
+    <h3 class="font-semibold mb-3">Manual Check-in</h3>
+    <form method="post" action="/attendance/checkin" class="space-y-3 text-sm">
+      <select name="member_id" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700">
+        {% for m in members %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
+      </select>
+      <button class="w-full py-2 bg-indigo-600 text-white rounded-lg">Check In</button>
+    </form>
+    <hr class="my-4 dark:border-gray-700"/>
+    <h3 class="font-semibold mb-2">QR-style Quick Check-in</h3>
+    <p class="text-xs text-gray-500 mb-2">Type/scan a member ID:</p>
+    <div class="flex gap-2">
+      <input id="qrInput" type="number" placeholder="Member ID" class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700"/>
+      <button onclick="qrCheckin()" class="px-4 bg-green-600 text-white rounded-lg">Go</button>
+    </div>
+  </div>
+
+  <!-- Today list -->
+  <div class="md:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow">
+    <h3 class="font-semibold mb-3">Today ({{ today }})</h3>
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="text-left text-gray-500"><tr><th class="p-2">Member</th><th class="p-2">In</th><th class="p-2">Out</th><th class="p-2"></th></tr></thead>
+      <tbody>
+        {% for a in today_records %}
+        <tr class="border-t dark:border-gray-700">
+          <td class="p-2">{{ a.member.name }}</td>
+          <td class="p-2">{{ a.check_in.strftime('%H:%M') }}</td>
+          <td class="p-2">{{ a.check_out.strftime('%H:%M') if a.check_out else '-' }}</td>
+          <td class="p-2">
+            {% if not a.check_out %}<a href="/attendance/checkout/{{ a.id }}" class="text-red-500 hover:underline">Check out</a>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="p-4 text-center text-gray-500">No check-ins today.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow mt-6">
+  <h3 class="font-semibold mb-3">History (last 50)</h3>
+  <div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="text-left text-gray-500"><tr><th class="p-2">Member</th><th class="p-2">In</th><th class="p-2">Out</th></tr></thead>
+    <tbody>
+      {% for a in history %}
+      <tr class="border-t dark:border-gray-700">
+        <td class="p-2">{{ a.member.name }}</td>
+        <td class="p-2">{{ a.check_in.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td class="p-2">{{ a.check_out.strftime('%Y-%m-%d %H:%M') if a.check_out else '-' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<script>
+  function qrCheckin() {
+    const id = document.getElementById('qrInput').value;
+    if (!id) return;
+    const f = document.createElement('form');
+    f.method = 'post'; f.action = '/attendance/checkin';
+    const i = document.createElement('input');
+    i.name = 'member_id'; i.value = id; f.appendChild(i);
+    document.body.appendChild(f); f.submit();
+  }
+</script>
+{% endblock %}

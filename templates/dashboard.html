@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block heading %}Dashboard{% endblock %}
+{% block content %}
+{% set cards = [
+  ('Total Members', total_members, 'bg-indigo-500'),
+  ('Active', active, 'bg-green-500'),
+  ('Expiring (7d)', expiring, 'bg-yellow-500'),
+  ('Monthly Revenue', '₹' ~ monthly_revenue|round(0,'floor')|int, 'bg-pink-500'),
+  ('Today Attendance', today_attendance, 'bg-blue-500'),
+] %}
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+  {% for label, val, color in cards %}
+  <div class="rounded-2xl p-4 text-white shadow {{ color }}">
+    <div class="text-sm opacity-90">{{ label }}</div>
+    <div class="text-2xl font-bold mt-1">{{ val }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="grid md:grid-cols-2 gap-4 mt-6">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow">
+    <h2 class="font-semibold mb-2">Revenue (last 6 months)</h2>
+    <canvas id="revChart" height="160"></canvas>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow">
+    <h2 class="font-semibold mb-2">Member Growth</h2>
+    <canvas id="growthChart" height="160"></canvas>
+  </div>
+</div>
+
+<script>
+  const revCtx = document.getElementById('revChart');
+  new Chart(revCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ revenue_labels|tojson }},
+      datasets: [{ label: 'Revenue (₹)', data: {{ revenue_data|tojson }},
+                   backgroundColor: 'rgba(99,102,241,0.7)' }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+  const grCtx = document.getElementById('growthChart');
+  new Chart(grCtx, {
+    type: 'line',
+    data: {
+      labels: {{ growth_labels|tojson }},
+      datasets: [{ label: 'Members', data: {{ growth_data|tojson }},
+                   borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.2)',
+                   fill: true, tension: 0.3 }]
+    },
+    options: { responsive: true }
+  });
+</script>
+{% endblock %}

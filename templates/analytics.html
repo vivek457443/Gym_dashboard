@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block heading %}Analytics{% endblock %}
+{% block content %}
+<div class="grid md:grid-cols-2 gap-4">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow">
+    <h3 class="font-semibold mb-2">Monthly Revenue (12 months)</h3>
+    <canvas id="revChart" height="180"></canvas>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow">
+    <h3 class="font-semibold mb-2">Active vs Inactive Members</h3>
+    <canvas id="pieChart" height="180"></canvas>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow md:col-span-2">
+    <h3 class="font-semibold mb-2">Peak Gym Hours</h3>
+    <canvas id="peakChart" height="120"></canvas>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow md:col-span-2">
+    <h3 class="font-semibold mb-2">Most Regular Members</h3>
+    <table class="w-full text-sm">
+      <thead class="text-left text-gray-500"><tr><th class="p-2">#</th><th class="p-2">Name</th><th class="p-2">Visits</th></tr></thead>
+      <tbody>
+        {% for m in top_members %}
+        <tr class="border-t dark:border-gray-700"><td class="p-2">{{ loop.index }}</td><td class="p-2">{{ m.name }}</td><td class="p-2">{{ m.count }}</td></tr>
+        {% else %}<tr><td colspan="3" class="p-4 text-center text-gray-500">No data yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  new Chart(document.getElementById('revChart'), {
+    type: 'line',
+    data: { labels: {{ rev_labels|tojson }},
+      datasets: [{ label: 'Revenue (₹)', data: {{ rev_data|tojson }},
+        borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.2)', fill: true, tension: 0.3 }] }
+  });
+  new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: { labels: ['Active','Inactive'],
+      datasets: [{ data: [{{ active }}, {{ inactive }}],
+        backgroundColor: ['#10b981','#ef4444'] }] }
+  });
+  new Chart(document.getElementById('peakChart'), {
+    type: 'bar',
+    data: { labels: {{ peak_labels|tojson }},
+      datasets: [{ label: 'Check-ins', data: {{ peak_data|tojson }},
+        backgroundColor: 'rgba(236,72,153,0.7)' }] }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Gym Dashboard{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+    // Apply saved theme before paint to avoid flash
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen">
+{% if request.session.get('admin') %}
+<div class="flex min-h-screen">
+  <!-- Sidebar -->
+  <aside id="sidebar" class="hidden md:flex md:flex-col w-60 bg-white dark:bg-gray-800 border-r dark:border-gray-700 shadow-sm">
+    <div class="p-4 text-xl font-bold text-indigo-600 dark:text-indigo-400 border-b dark:border-gray-700">🏋️ GymAdmin</div>
+    <nav class="flex-1 p-3 space-y-1 text-sm">
+      {% set links = [
+        ('dashboard','/dashboard','Dashboard','🏠'),
+        ('members','/members','Members','👥'),
+        ('trainers','/trainers','Trainers','🧑‍🏫'),
+        ('attendance','/attendance','Attendance','📋'),
+        ('plans','/plans','Plans & Dues','💳'),
+        ('analytics','/analytics','Analytics','📊'),
+      ] %}
+      {% for key, url, label, icon in links %}
+      <a href="{{ url }}" class="flex items-center gap-2 px-3 py-2 rounded-lg
+        {% if active_page == key %}bg-indigo-600 text-white{% else %}hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+        <span>{{ icon }}</span><span>{{ label }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+    <div class="p-3 border-t dark:border-gray-700 text-sm">
+      <div class="text-gray-500 dark:text-gray-400">Signed in as</div>
+      <div class="font-semibold">{{ request.session.get('admin') }}</div>
+      <a href="/logout" class="mt-2 inline-block text-red-500 hover:underline">Logout</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col">
+    <header class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between">
+      <button onclick="document.getElementById('sidebar').classList.toggle('hidden')" class="md:hidden text-2xl">☰</button>
+      <h1 class="text-lg font-semibold">{% block heading %}{% endblock %}</h1>
+      <button id="themeBtn" class="px-3 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-sm">🌓 Theme</button>
+    </header>
+    <main class="p-4 md:p-6 flex-1">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% else %}
+  {% block guest %}{% endblock %}
+{% endif %}
+<script>
+  const btn = document.getElementById('themeBtn');
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const root = document.documentElement;
+      root.classList.toggle('dark');
+      localStorage.setItem('theme', root.classList.contains('dark') ? 'dark' : 'light');
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block heading %}Members{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-center gap-2 justify-between mb-4">
+  <form method="get" class="flex gap-2">
+    <input name="q" value="{{ q }}" placeholder="Search name, phone, email"
+      class="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"/>
+    <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Search</button>
+  </form>
+  <button onclick="openModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg">+ Add Member</button>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-2xl shadow overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-100 dark:bg-gray-700 text-left">
+      <tr>
+        <th class="p-3">Photo</th><th class="p-3">Name</th><th class="p-3">Phone</th>
+        <th class="p-3">Plan</th><th class="p-3">Expiry</th>
+        <th class="p-3">Status</th><th class="p-3">Trainer</th><th class="p-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in members %}
+      <tr class="border-t dark:border-gray-700">
+        <td class="p-3">
+          {% if m.image %}<img src="/static/uploads/{{ m.image }}" class="w-10 h-10 rounded-full object-cover"/>
+          {% else %}<div class="w-10 h-10 rounded-full bg-indigo-200 dark:bg-indigo-700 flex items-center justify-center font-bold">{{ m.name[0] }}</div>{% endif %}
+        </td>
+        <td class="p-3 font-medium">{{ m.name }}<div class="text-xs text-gray-500">{{ m.email }}</div></td>
+        <td class="p-3">{{ m.phone }}</td>
+        <td class="p-3">{{ m.membership_type }}</td>
+        <td class="p-3 {% if m.expiry_date and m.expiry_date < today %}text-red-500{% endif %}">{{ m.expiry_date }}</td>
+        <td class="p-3">
+          <span class="px-2 py-1 rounded-full text-xs {% if m.payment_status=='Paid' %}bg-green-100 text-green-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">{{ m.payment_status }}</span>
+        </td>
+        <td class="p-3">{{ m.trainer.name if m.trainer else '-' }}</td>
+        <td class="p-3 space-x-2 whitespace-nowrap">
+          <button onclick='editMember({{ {"id":m.id,"name":m.name,"phone":m.phone or "","email":m.email or "","age":m.age or 0,"gender":m.gender or "Male","membership_type":m.membership_type or "Monthly","fee":m.fee or 0,"payment_status":m.payment_status or "Paid","trainer_id":m.trainer_id or 0}|tojson }})' class="text-indigo-600 hover:underline">Edit</button>
+          <a href="/members/delete/{{ m.id }}" onclick="return confirm('Delete this member?')" class="text-red-600 hover:underline">Delete</a>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="p-6 text-center text-gray-500">No members found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+<div class="flex justify-center gap-2 mt-4">
+  {% for p in range(1, pages+1) %}
+    <a href="?q={{ q }}&page={{ p }}" class="px-3 py-1 rounded {% if p==page %}bg-indigo-600 text-white{% else %}bg-white dark:bg-gray-700{% endif %}">{{ p }}</a>
+  {% endfor %}
+</div>
+
+<!-- Modal -->
+<div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 max-h-screen overflow-y-auto">
+    <h3 id="modalTitle" class="text-lg font-bold mb-4">Add Member</h3>
+    <form id="memberForm" method="post" action="/members/add" enctype="multipart/form-data" class="grid grid-cols-2 gap-3 text-sm">
+      <input name="name" placeholder="Full name" required class="col-span-2 px-3 py-2 border rounded-lg dark:bg-gray-700"/>
+      <input name="phone" placeholder="Phone" class="px-3 py-2 border rounded-lg dark:bg-gray-700"/>
+      <input name="email" placeholder="Email" class="px-3 py-2 border rounded-lg dark:bg-gray-700"/>
+      <input name="age" type="number" placeholder="Age" class="px-3 py-2 border rounded-lg dark:bg-gray-700"/>
+      <select name="gender" class="px-3 py-2 border rounded-lg dark:bg-gray-700">
+        <option>Male</option><option>Female</option><option>Other</option>
+      </select>
+      <select name="membership_type" class="px-3 py-2 border rounded-lg dark:bg-gray-700">
+        <option>Monthly</option><option>Quarterly</option><option>Yearly</option>
+      </select>
+      <input name="fee" type="number" step="0.01" placeholder="Fee (₹)" class="px-3 py-2 border rounded-lg dark:bg-gray-700"/>
+      <select name="payment_status" class="px-3 py-2 border rounded-lg dark:bg-gray-700">
+        <option>Paid</option><option>Pending</option>
+      </select>
+      <select name="trainer_id" class="px-3 py-2 border rounded-lg dark:bg-gray-700 col-span-2">
+        <option value="0">-- No trainer --</option>
+        {% for t in trainers %}<option value="{{ t.id }}">{{ t.name }} ({{ t.specialization }})</option>{% endfor %}
+      </select>
+      <input type="file" name="image" accept="image/*" class="col-span-2 text-sm"/>
+      <div class="col-span-2 flex justify-end gap-2 mt-2">
+        <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700">Cancel</button>
+        <button class="px-4 py-2 rounded-lg bg-indigo-600 text-white">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('modal');
+  const form = document.getElementById('memberForm');
+  function openModal() {
+    form.reset();
+    form.action = '/members/add';
+    document.getElementById('modalTitle').textContent = 'Add Member';
+    modal.classList.remove('hidden'); modal.classList.add('flex');
+  }
+  function closeModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+  function editMember(m) {
+    form.action = '/members/edit/' + m.id;
+    document.getElementById('modalTitle').textContent = 'Edit Member';
+    for (const [k,v] of Object.entries(m)) {
+      if (form.elements[k]) form.elements[k].value = v;
+    }
+    modal.classList.remove('hidden'); modal.classList.add('flex');
+  }
+</script>
+{% endblock %}
